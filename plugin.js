@@ -14,6 +14,7 @@ var unwanted_list_exact = [
   
 var param_action_dict = {
   "author": [plugin_clear_right_page, plugin_show_author],
+  "settings": [plugin_clear_right_page, plugin_show_settings], 
 }
 
 var box_action_dict = {
@@ -24,8 +25,17 @@ var box_action_dict = {
   
 var column_action_dict = {
   "left_main": [add_item_to_left_column, ],
-  "right_main": [determine_box, ],
+  "right_main": [parse_cookie, determine_box, ],
 }
+
+/*
+ * cookie object
+ *
+ * We must be careful since cookie only allows <= 4K data
+ */
+var plugin_settings_dict = {
+  "filter_on": false,
+};
 
 /*
  * add_item_to_left_column() - Add new items to left column
@@ -46,6 +56,11 @@ function add_item_to_left_column()
   // We use sent box image
   new_item.children[0].setAttribute("src", "../themes/cmu_theme/boxSent.png");
   new_item.children[1].innerHTML = "Plugin Settings";
+  
+  link_text = new_item.children[1].getAttribute("href") + "&plugin=settings";
+  new_item.children[1].setAttribute("href", link_text);
+  
+  //// Next one
   
   new_item = first_item.cloneNode(true);
   left_item_container.appendChild(new_item);
@@ -90,6 +105,8 @@ function report_removed_num(num)
   
 function remove_unwanted()
 {
+  if(plugin_settings_dict["filter_on"] == false) return;
+  
   var i;
   
   from_list = document.getElementsByClassName("fieldFrom");
@@ -255,6 +272,62 @@ function dispatch_column()
 }
 
 /*
+ * parse_cookie() - Retrieve cookie from browser, and parse it to become
+ * a dict object
+ */
+function parse_cookie()
+{
+  var cookie_text = document.cookie;
+  var cookie_list = cookie_text.split(";");
+  
+  var i;
+  var cookie_dict_local = {};
+  for(i = 0;i < cookie_list.length;i++)
+  {
+    var key_value_pair = cookie_list[i].split("=");
+    if(key_value_pair.length != 2) continue;
+    
+    var key = key_value_pair[0].trim();
+    var value = key_value_pair[1].trim();
+    
+    if(key == "plugin_settings") 
+    {
+      value = value.split("'").join("\"");
+      plugin_settings_dict = JSON.parse(value);
+    }
+  }
+  
+  return cookie_dict_local;
+}
+
+/*
+ * assemble_cookie() - Save what is currently in cookie_dict into browser cookie
+ */
+function assemble_cookie()
+{
+  var cookie_str = document.cookie;
+  var start_index = cookie_str.indexOf("plugin_settings");
+  if(start_index != -1)
+  {
+    var end_index = cookie_str.indexOf(";", start_index);
+    if(end_index == -1) cookie_str = cookie_str.substring(0, start_index);
+    else cookie_str = (cookie_str.substring(0, start_index) +
+                       cookie_str.substring(end_index + 1, cookie_str.length));
+  }
+  
+  if(cookie_str[cookie_str.length - 1] != ";") cookie_str += ";";
+  
+  var value = JSON.stringify(plugin_settings_dict).split("\"").join("'");
+    
+  cookie_str = ("plugin_settings" + "=" + value);
+  
+  // Finally set the cookie
+  document.cookie = cookie_str;
+
+  return;
+}
+
+/*
  * show_plugin_page() - When we are directed to drafts folder, we check
  * for special arguments, and if they are there, clear the page and draw
  * our own
@@ -317,5 +390,69 @@ function plugin_show_author()
   return;
 }
 
-dispatch_column();
+/*
+ * save_all_settings() - Save all changes made in cookie
+ */
+function save_all_settings(e)
+{
+  plugin_settings_dict["filter_on"] = false;
 
+  if(document.getElementById("filter_on_yes").checked)
+  {
+    plugin_settings_dict["filter_on"] = true;
+  }
+  
+  // This will pack the object into a JSON and then set cookie
+  assemble_cookie();
+  alert("All changed saved!");
+  
+  return;
+}
+
+
+function plugin_show_settings()
+{
+  var page = document.getElementsByClassName("pageContents")[0];
+  
+  page.appendChild(create_node_with_text("h2", "Enable Filter"));
+  
+  var filter_div = document.createElement("div");
+  var filter_radio_yes = document.createElement("input");
+  filter_radio_yes.setAttribute("type", "radio");
+  filter_radio_yes.setAttribute("name", "filter_on");
+  filter_radio_yes.setAttribute("value", "Yes");
+  filter_radio_yes.setAttribute("id", "filter_on_yes");
+
+  var filter_radio_no = document.createElement("input");
+  filter_radio_no.setAttribute("type", "radio");
+  filter_radio_no.setAttribute("name", "filter_on");
+  filter_radio_no.setAttribute("value", "No");
+  filter_radio_no.setAttribute("id", "filter_on_no");
+  
+  if("filter_on" in plugin_settings_dict)
+  {
+    var filter_on_flag = plugin_settings_dict["filter_on"];
+    
+    if(filter_on_flag == true) filter_radio_yes.checked = true;
+    else if(filter_on_flag == false) filter_radio_no.checked = true;
+  }
+  
+  filter_div.appendChild(filter_radio_yes);
+  filter_div.appendChild(document.createTextNode("Yes"));
+  filter_div.appendChild(filter_radio_no);
+  filter_div.appendChild(document.createTextNode("No"));
+  
+  var submit_div = document.createElement("div");
+  var submit_button = document.createElement("button");
+  var submit_button_text = document.createTextNode("Save All");
+  submit_button.appendChild(submit_button_text);
+  submit_button.addEventListener("click", save_all_settings);
+  submit_div.appendChild(submit_button);
+  
+  page.appendChild(filter_div);
+  page.appendChild(submit_div);
+  
+  return;
+}
+
+dispatch_column();
