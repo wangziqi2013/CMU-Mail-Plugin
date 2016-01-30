@@ -11,10 +11,15 @@ var unwanted_list_exact = [
   "lieyongz",
   "sebastian",
 ]
+  
+var param_action_dict = {
+  "author": [plugin_clear_right_page, plugin_show_author],
+}
 
 var box_action_dict = {
   "INBOX": [remove_unwanted, ], 
-  "Sent": [remove_unwanted, ], 
+  "Sent": [remove_unwanted, ],
+  "Drafts": [show_plugin_page, ]
 }
   
 var column_action_dict = {
@@ -22,9 +27,36 @@ var column_action_dict = {
   "right_main": [determine_box, ],
 }
 
+/*
+ * add_item_to_left_column() - Add new items to left column
+ * as functionality enhancement
+ */
 function add_item_to_left_column()
 {
+  var left_item_container = document.getElementById("boxFolders").children[0];
+  if(left_item_container == undefined) return;
   
+  var first_item = left_item_container.children[1];
+  if(first_item == undefined) return;
+  
+  var link_text;
+  
+  new_item = first_item.cloneNode(true);
+  left_item_container.appendChild(new_item);
+  // We use sent box image
+  new_item.children[0].setAttribute("src", "../themes/cmu_theme/boxSent.png");
+  new_item.children[1].innerHTML = "Plugin Settings";
+  
+  new_item = first_item.cloneNode(true);
+  left_item_container.appendChild(new_item);
+  // We use sent box image
+  new_item.children[0].setAttribute("src", "../themes/cmu_theme/boxInbox.png");
+  new_item.children[1].innerHTML = "About Author";
+  
+  link_text = new_item.children[1].getAttribute("href") + "&plugin=author";
+  new_item.children[1].setAttribute("href", link_text);
+  
+  return;
 }
 
 /*
@@ -42,7 +74,7 @@ function report_removed_num(num)
   bottom_bar = bottom_bar[0].children[0].children[0].children[1];
   var txt = bottom_bar.innerHTML;
   
-  end_index = txt.indexOf("total)");
+  end_index = txt.indexOf("total");
   if(end_index == -1)
   {
     alert("Illegal summary layout!");
@@ -185,6 +217,69 @@ function dispatch_column()
       column_action_list[i]();
     }
   }
+}
+
+/*
+ * show_plugin_page() - When we are directed to drafts folder, we check
+ * for special arguments, and if they are there, clear the page and draw
+ * our own
+ */
+function show_plugin_page()
+{
+  var param_dict = parse_get_parameter(window.location.href);
+  
+  // If "plugin" does not appear as a parameter just return - it's
+  // the real draft box
+  if(!("plugin" in param_dict)) return;
+  plugin_action = param_dict["plugin"];
+  
+  if(!(plugin_action in param_action_dict)) return;
+  param_action_list = param_action_dict[plugin_action];
+  var i;
+  for(i = 0;i < param_action_list.length;i++)
+  {
+    param_action_list[i]();
+  }
+  
+  return;
+}
+
+/*
+ * plugin_clear_right_page() - Remove all elements in right column for plugin page
+ */
+function plugin_clear_right_page()
+{
+  var right_body = document.getElementById("messageListWrap");
+  right_body.parentNode.removeChild(right_body);
+  
+  var tools_list = document.getElementById("plugins");
+  tools_list.parentNode.removeChild(tools_list);
+  
+  return;
+}
+
+/*
+ * create_node_with_text() - Create a DOM element with plain text inside
+ */
+function create_node_with_text(node_type, text)
+{
+  var new_node = document.createElement(node_type);
+  var new_node_text = document.createTextNode(text);
+  new_node.appendChild(new_node_text);
+  
+  return new_node;
+}
+
+function plugin_show_author()
+{
+  var page = document.getElementsByClassName("pageContents")[0];
+  
+  page.appendChild(create_node_with_text("h1", "About Author"));
+  page.appendChild(create_node_with_text("div", "This mail plugin is created by Ziqi Wang " + 
+                                        "(ziqiw@andrew.cmu.edu)"));
+  page.appendChild(create_node_with_text("div", "If you have any problem welcome to contact me"));
+  
+  return;
 }
 
 dispatch_column();
