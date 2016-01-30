@@ -17,7 +17,7 @@ var param_action_dict = {
 }
 
 var box_action_dict = {
-  "INBOX": [remove_unwanted, ], 
+  "INBOX": [remove_unwanted, add_sendto_link], 
   "Sent": [remove_unwanted, ],
   "Drafts": [show_plugin_page, ]
 }
@@ -123,6 +123,41 @@ function remove_unwanted()
   report_removed_num(removed_num);
 }
 
+/*
+ * add_sendto_link() - Add a sendto link to email addresses appearing 
+ * on the email list for fast reply
+ */
+function add_sendto_link()
+{
+  var from_field_list = document.getElementsByClassName("fieldFrom");
+  if(from_field_list.length == 0) return;
+  
+  var i;
+  for(i = 0;i < from_field_list.length;i++)
+  {
+    var child_label = from_field_list[i].children[0];
+    if(child_label == undefined) continue;
+    
+    // Frist create a new link element
+    var new_link = document.createElement("a");
+    var new_text = document.createTextNode(child_label.innerHTML);
+    new_link.appendChild(new_text);
+
+    // Then set a link
+    var link_text = "/src/compose.php?send_to=";
+    var email_text = from_field_list[i].getAttribute("title");
+    
+    email_text = email_text.replace("@", "%40");
+    new_link.setAttribute("href", link_text + email_text);
+    
+    var txt_child = child_label.childNodes[0];
+    txt_child.parentNode.removeChild(txt_child);
+    //child_label.innerHTMl = "";
+    child_label.appendChild(new_link);
+  }
+  
+  return;
+}
 /*
  * parse_get_parameter() - Returns a mapping from key to value
  */
@@ -283,3 +318,4 @@ function plugin_show_author()
 }
 
 dispatch_column();
+
