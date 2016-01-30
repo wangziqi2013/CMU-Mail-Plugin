@@ -13,13 +13,13 @@ var unwanted_list_exact = [
 ]
   
 var param_action_dict = {
-  "author": [plugin_clear_right_page, plugin_show_author],
-  "settings": [plugin_clear_right_page, plugin_show_settings], 
+  "author": [plugin_clear_right_page, plugin_show_author, ],
+  "settings": [plugin_clear_right_page, plugin_show_settings, ], 
 }
 
 var box_action_dict = {
-  "INBOX": [remove_unwanted, add_sendto_link], 
-  "Sent": [remove_unwanted, ],
+  "INBOX": [remove_unwanted, add_sendto_link, ], 
+  "Sent": [remove_unwanted, add_sendto_link, ],
   "Drafts": [show_plugin_page, ]
 }
   
@@ -154,6 +154,10 @@ function add_sendto_link()
   {
     var child_label = from_field_list[i].children[0];
     if(child_label == undefined) continue;
+    
+    // If there is another <span> inside, we just jump one level
+    // further into the hierarchy
+    if(child_label.children[0] != undefined) child_label = child_label.children[0];
     
     // Frist create a new link element
     var new_link = document.createElement("a");
