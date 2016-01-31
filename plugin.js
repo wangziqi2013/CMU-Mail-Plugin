@@ -18,14 +18,16 @@ var param_action_dict = {
 }
 
 var box_action_dict = {
-  "INBOX": [remove_unwanted, add_sendto_link, ], 
+  "INBOX": [remove_unwanted, add_sendto_link, ],// save_data_to_draft], 
   "Sent": [remove_unwanted, add_sendto_link, ],
   "Drafts": [show_plugin_page, ]
 }
   
 var column_action_dict = {
   "left_main": [add_item_to_left_column, ],
-  "right_main": [parse_cookie, determine_box, ],
+  "right_main": [parse_cookie,  // Restore settings from cookie
+                 determine_box, // Call callbacks for each mailbox
+                ], 
 }
 
 /*
@@ -54,7 +56,7 @@ function add_item_to_left_column()
   new_item = first_item.cloneNode(true);
   left_item_container.appendChild(new_item);
   // We use sent box image
-  new_item.children[0].setAttribute("src", "../themes/cmu_theme/boxSent.png");
+  new_item.children[0].setAttribute("src", "../themes/cmu_theme/iconOptions.png");
   new_item.children[1].innerHTML = "Plugin Settings";
   
   link_text = new_item.children[1].getAttribute("href") + "&plugin=settings";
@@ -65,7 +67,7 @@ function add_item_to_left_column()
   new_item = first_item.cloneNode(true);
   left_item_container.appendChild(new_item);
   // We use sent box image
-  new_item.children[0].setAttribute("src", "../themes/cmu_theme/boxInbox.png");
+  new_item.children[0].setAttribute("src", "../themes/cmu_theme/infoTime.png");
   new_item.children[1].innerHTML = "About Author";
   
   link_text = new_item.children[1].getAttribute("href") + "&plugin=author";
@@ -413,6 +415,105 @@ function save_all_settings(e)
   return;
 }
 
+/*
+ * download_page_and_parse() - Send a HTTP request and then call the callback
+ */
+function download_page(method, url, callback)
+{
+  var request = new XMLHttpRequest();
+  request.onreadystatechange = function() 
+  {
+    if(request.readyState == 4 && request.status == 200)
+    {
+      callback(request.responseText);
+    }
+    
+    return;
+  };
+  
+  request.open(method, url, true);
+  request.send();
+  
+  return;
+}
+
+function save_data_to_draft()
+{
+  /*
+  var new_page = document.createElement("iframe");
+  new_page.setAttribute("src", "/src/compose.php?mailbox=INBOX.Drafts&startMessage=1");
+  
+  var new_document = new_page ;
+  alert(new_page);
+  var save_draft_button = new_document.getElementsByTagName("input");
+                  alert(save_graft_button);
+                  //if(save_draft_button.length != 1) return;
+                  var i, found_flag = false;
+                  for(i = 0;i < save_draft_button.length;i++)
+                  {
+                    if(save_draft_button[i].getAttribute("name") == "draft")
+                    {
+                      found_flag = true;
+                      save_draft_button = save_draft_button[i];
+                      break;
+                    }
+                  }
+                  
+                  if(found_flag == false) return;
+                  
+                  save_draft_button.click();
+                  new_document.forms["compose"].submit();
+                  alert("finish!");
+  */
+  
+  
+  download_page("GET", 
+                "/src/compose.php?mailbox=INBOX.Drafts&startMessage=1", 
+                function(page_text)
+                {
+                  var new_dom = document.createElement("html");
+                  new_dom.style.visibility = 'hidden';
+                  
+                  new_dom.innerHTML = page_text;
+                  document.getElementsByTagName("body")[0].appendChild(new_dom);
+
+                  var save_draft_button = new_dom.getElementsByTagName("input");
+                  var i, found_flag = false;
+                  for(i = 0;i < save_draft_button.length;i++)
+                  {
+                    if(save_draft_button[i].getAttribute("name") == "draft")
+                    {
+                      found_flag = true;
+                      save_draft_button = save_draft_button[i];
+                      break;
+                    }
+                  }
+                  
+                  if(found_flag == false) return;
+                  var form = save_draft_button.form;
+                  
+                  var new_input = document.createElement("input");
+                  new_input.setAttribute("type", "hidden");
+                  new_input.setAttribute("name", "draft");
+                  new_input.setAttribute("value", "Save Draft");
+                  form.appendChild(new_input);
+                  form.elements["body"].value = "This is a test data 22222";
+                  
+                  var new_iframe = document.createElement("iframe");
+                  new_iframe.setAttribute("name", "plugin_private_iframe");
+                  new_iframe.style.visibility = 'hidden';
+                  new_dom.appendChild(new_iframe);
+                  
+                  form.target = "plugin_private_iframe";
+                  
+                  form.submit();
+                  alert(1);
+                  
+                  // Destory that 
+                  new_dom.parentNode.removeChild(new_dom);
+                  new_iframe.parentNode.removeChild(new_iframe);
+                });
+}
 
 function plugin_show_settings()
 {
