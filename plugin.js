@@ -12,6 +12,12 @@ var plugin_data_dict = {
     "lieyongz",
     "sebastian",
   ],
+  
+  title_color_dict: {
+    "10-601A": "#abcdef",
+    "15-721": "#ffff00",
+    "15-440": "#DD8866",
+  }, 
 }
  
   
@@ -21,7 +27,7 @@ var param_action_dict = {
 }
 
 var box_action_dict = {
-  "INBOX": [remove_unwanted, add_sendto_link, ],// save_data_to_draft], 
+  "INBOX": [remove_unwanted, add_sendto_link, customize_row_color],// save_data_to_draft], 
   "Sent": [remove_unwanted, add_sendto_link, ],
   "Drafts": [show_plugin_page, ]
 }
@@ -222,6 +228,58 @@ function remove_unwanted()
   }
   
   report_removed_num(removed_num);
+}
+
+/*
+ * customize_row_color() - Change the color of a row according to
+ * customized settings
+ */
+function customize_row_color()
+{
+  var row_list = document.getElementsByClassName("messageRow");
+  
+  if(row_list.length == 0) return;
+  
+  for(var i = 0;i < row_list.length;i++)
+  {
+    var search_text;
+    var row = row_list[i];
+    var label = row.getElementsByTagName("label");
+    
+    if(label.length == 0) return;
+    
+    var text_node = label[0].getElementsByTagName("a");
+    if(text_node.length > 0)
+    {
+      search_text = text_node[0].innerHTML;
+    }
+    else
+    {
+      text_node = label[0].getElementsByTagName("span");
+      if(text_node.length > 0)
+      {
+        search_text = text_node[0].innerHTML;
+      }
+      else
+      {
+        search_text = label[0].innerHTML;
+      }
+    }
+    
+    var color_dict = plugin_data_dict["title_color_dict"];
+    for(var title in color_dict)
+    {
+      if(search_text.indexOf(title) == -1) continue;
+      //alert(title);
+      var color = color_dict[title];
+      for(var k = 0;k < row.children.length;k++)
+      {
+        row.children[k].setAttribute("bgcolor", color);
+      }
+    }
+  }
+  
+  return;
 }
 
 /*
@@ -665,7 +723,12 @@ function plugin_show_settings()
 
 dispatch_column();
 
+
 /*
 Exception: SyntaxError: missing : after property id
-@Scratchpad/9:11
+@Scratchpad/9:16
+*/
+/*
+Exception: SyntaxError: missing ] after element list
+@Scratchpad/9:17
 */
