@@ -6,11 +6,14 @@
 // @grant       none
 // ==/UserScript==
 
-var unwanted_list_exact = [
-  "@piazza.com",
-  "lieyongz",
-  "sebastian",
-]
+var plugin_data_dict = {
+  unwanted_exact_list: [
+    "piazza.com",
+    "lieyongz",
+    "sebastian",
+  ],
+}
+ 
   
 var param_action_dict = {
   "author": [plugin_clear_right_page, plugin_show_author, ],
@@ -24,7 +27,7 @@ var box_action_dict = {
 }
   
 var column_action_dict = {
-  "left_main": [add_item_to_left_column, ],
+  "left_main": [add_item_to_left_column, add_read_all_to_left_column],
   "right_main": [parse_cookie,  // Restore settings from cookie
                  determine_box, // Call callbacks for each mailbox
                 ], 
@@ -76,6 +79,84 @@ function add_item_to_left_column()
   return;
 }
 
+function read_all_email(e)
+{
+  //alert(window.parent.document.getElementsByName("mailbox"));
+  var right_document = window.frameElement.parentNode.children[1].contentDocument;
+  var mailbox_input = right_document.getElementsByName("mailbox")[0];
+  //alert(mailbox_input.length);
+  if(mailbox_input == undefined) return;
+    
+  if(mailbox_input.getAttribute("value") != "INBOX")
+  {
+    alert("Please switch to inbox first");
+    return;
+  }
+
+  var post_str = "location=%2Fsrc%2Fright_main.php%3Fmailbox%3DINBOX%26startMessage%3D1"
+  var smtoken = right_document.getElementsByName("smtoken")[0].getAttribute("value");
+  post_str += ("&smtoken=" + smtoken);
+  post_str += "&mailbox=INBOX&markRead=Read";
+  //alert(1);
+  var latest_row = right_document.getElementsByClassName("fieldSubject")[0].getElementsByTagName(
+    "a")[0].getAttribute("href");
+  
+  var index1 = latest_row.indexOf("passed_id=");
+  var index2 = latest_row.indexOf("&", index1);
+  var latest_id = parseInt(latest_row.substring(index1 + 10, index2));
+  var count = latest_id;
+  for(var i = 0;i <= latest_id;i++)
+  {
+    var s = "&msg%5B" + i.toString() + "%5D=" + count.toString();
+    count -= 1;
+    post_str += s;
+  }
+  
+  var request = new XMLHttpRequest();
+  var url = "/src/move_messages.php";
+  request.open("POST", url, true);
+
+  request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  request.setRequestHeader("Content-length", post_str.length);
+  request.setRequestHeader("Connection", "close");
+
+  request.onreadystatechange = function() 
+  {
+	  if(request.readyState == 4) 
+    {
+		  alert("All message has been read");
+      return;
+	  }
+  }
+  
+  request.send(post_str);
+  
+  return;
+}
+
+function add_read_all_to_left_column()
+{
+  var left_column = document.getElementById("boxFolders");
+  var inbox_row = left_column.getElementsByClassName("inbox")[0];
+  if(inbox_row == undefined) return;
+  
+  var read_all_link = document.createElement("a");
+  read_all_link.style.background = "transparent url(\"../themes/cmu_theme/msgSeen.png\") no-repeat scroll left top";
+  read_all_link.style.display = "block";
+  read_all_link.style.float = "right";
+  read_all_link.style.paddingBottom = "16px";
+  //read_all_link.style.marginRight = "16px";
+  read_all_link.style.position = "relative";
+  read_all_link.style.top = "2px";
+  read_all_link.style.width = "20px";
+  read_all_link.setAttribute("href", "javascript:void(0)");
+  read_all_link.addEventListener("click", read_all_email);
+  
+  inbox_row.insertBefore(read_all_link, inbox_row.children[1]);
+  
+  return;
+}
+
 /*
  * report_removed_num() - Output to the page on how many items has been hidden
  */
@@ -111,20 +192,18 @@ function remove_unwanted()
   
   var i;
   
-  from_list = document.getElementsByClassName("fieldFrom");
-  list_len = from_list.length;
-  
-  if(list_len == 0) return;
+  var from_list = document.getElementsByClassName("fieldFrom");
   
   var removed_num = 0;
+  var unwanted_exact_list = plugin_data_dict["unwanted_exact_list"];
   for(i = 0;i < from_list.length;i++)
   {
     from_email = from_list[i].getAttribute("title");
     
     var j;
-    for(j = 0;j < unwanted_list_exact.length;j++)
+    for(j = 0;j < unwanted_exact_list.length;j++)
     {
-      var index = from_email.indexOf(unwanted_list_exact[j]);
+      var index = from_email.indexOf(unwanted_exact_list[j]);
       
       if(index != -1)
       {
@@ -437,46 +516,27 @@ function download_page(method, url, callback)
   return;
 }
 
+/*
+ * save_data_to_draft() - Save current global data to a draft email
+ */
 function save_data_to_draft()
 {
-  /*
-  var new_page = document.createElement("iframe");
-  new_page.setAttribute("src", "/src/compose.php?mailbox=INBOX.Drafts&startMessage=1");
-  
-  var new_document = new_page ;
-  alert(new_page);
-  var save_draft_button = new_document.getElementsByTagName("input");
-                  alert(save_graft_button);
-                  //if(save_draft_button.length != 1) return;
-                  var i, found_flag = false;
-                  for(i = 0;i < save_draft_button.length;i++)
-                  {
-                    if(save_draft_button[i].getAttribute("name") == "draft")
-                    {
-                      found_flag = true;
-                      save_draft_button = save_draft_button[i];
-                      break;
-                    }
-                  }
-                  
-                  if(found_flag == false) return;
-                  
-                  save_draft_button.click();
-                  new_document.forms["compose"].submit();
-                  alert("finish!");
-  */
-  
-  
   download_page("GET", 
                 "/src/compose.php?mailbox=INBOX.Drafts&startMessage=1", 
                 function(page_text)
                 {
+                  // Create a new HTML node, set visibility to hidden, and 
+                  // insert it into the page. We need to insert in order for
+                  // form component to work
                   var new_dom = document.createElement("html");
                   new_dom.style.visibility = 'hidden';
                   
+                  // Let browser parse the raw HTML string 
                   new_dom.innerHTML = page_text;
                   document.getElementsByTagName("body")[0].appendChild(new_dom);
 
+                  // Get the submission button by its tag name and name
+                  // since getElementsByName does not work
                   var save_draft_button = new_dom.getElementsByTagName("input");
                   var i, found_flag = false;
                   for(i = 0;i < save_draft_button.length;i++)
@@ -489,16 +549,23 @@ function save_data_to_draft()
                     }
                   }
                   
+                  // Then get the form object
                   if(found_flag == false) return;
                   var form = save_draft_button.form;
                   
+                  // Set a hidden input object to carry information that
+                  // we are requesting a draft storage
                   var new_input = document.createElement("input");
                   new_input.setAttribute("type", "hidden");
                   new_input.setAttribute("name", "draft");
                   new_input.setAttribute("value", "Save Draft");
                   form.appendChild(new_input);
-                  form.elements["body"].value = "This is a test data 22222";
                   
+                  // Put all data into a single object and then serialized
+                  form.elements["body"].value = JSON.stringify(plugin_data_dict);
+                  
+                  // Redirect response into this invisible iframe to prevent
+                  // users from noticing the hidden operation
                   var new_iframe = document.createElement("iframe");
                   new_iframe.setAttribute("name", "plugin_private_iframe");
                   new_iframe.style.visibility = 'hidden';
@@ -507,14 +574,18 @@ function save_data_to_draft()
                   form.target = "plugin_private_iframe";
                   
                   form.submit();
-                  alert(1);
                   
-                  // Destory that 
+                  // Destory two temporary object we have just created
                   new_dom.parentNode.removeChild(new_dom);
                   new_iframe.parentNode.removeChild(new_iframe);
                 });
+  
+  return;
 }
 
+/*
+ * plugin_show_settings() - Draw setting page
+ */
 function plugin_show_settings()
 {
   var page = document.getElementsByClassName("pageContents")[0];
@@ -547,6 +618,34 @@ function plugin_show_settings()
   filter_div.appendChild(filter_radio_no);
   filter_div.appendChild(document.createTextNode("No"));
   
+  page.appendChild(filter_div);
+  
+  //////////////////////////////////
+  
+  page.appendChild(create_node_with_text("h2", "Sender Filter List"));
+  var unwanted_exact_list = plugin_data_dict["unwanted_exact_list"];
+  for(var i = 0;i < unwanted_exact_list.length;i++)
+  {
+    //alert(i);
+    var line_div = document.createElement("div");
+    var line_input = document.createElement("input");
+    line_input.setAttribute("type", "text");
+    line_input.setAttribute("id", "unwanted_exact_list_" + i.toString());
+    line_input.setAttribute("value", unwanted_exact_list[i]);
+    line_div.appendChild(line_input);
+    
+    var line_button_save = create_node_with_text("button", "Save");
+    line_button_save.setAttribute("name", "unwanted_exact_list_" + i.toString());
+    var line_button_remove = create_node_with_text("button", "Remove");
+    line_button_remove.setAttribute("name", "unwanted_exact_list_" + i.toString());
+    
+    line_div.appendChild(line_button_save);
+    line_div.appendChild(line_button_remove);
+    page.appendChild(line_div);
+  }
+  
+  //////////////////////////////////
+  
   var submit_div = document.createElement("div");
   var submit_button = document.createElement("button");
   var submit_button_text = document.createTextNode("Save All");
@@ -554,10 +653,16 @@ function plugin_show_settings()
   submit_button.addEventListener("click", save_all_settings);
   submit_div.appendChild(submit_button);
   
-  page.appendChild(filter_div);
   page.appendChild(submit_div);
+  
+  //////////////////////////////////
   
   return;
 }
 
 dispatch_column();
+
+/*
+Exception: SyntaxError: missing : after property id
+@Scratchpad/9:11
+*/
