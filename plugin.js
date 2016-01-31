@@ -93,7 +93,7 @@ function read_all_email(e)
     return;
   }
 
-  var post_str = "location=%2Fsrc%2Fright_main.php%3Fmailbox%3DINBOX%26startMessage%3D1"
+  var post_str = "";//"location=%2Fsrc%2Fright_main.php%3Fmailbox%3DINBOX%26startMessage%3D1"
   var smtoken = right_document.getElementsByName("smtoken")[0].getAttribute("value");
   post_str += ("&smtoken=" + smtoken);
   post_str += "&mailbox=INBOX&markRead=Read";
@@ -124,7 +124,10 @@ function read_all_email(e)
   {
 	  if(request.readyState == 4) 
     {
-		  alert("All message has been read");
+      // Refresh left and right window
+      window.location.reload();
+      right_document.defaultView.location.reload();
+		  //alert("All message has been read");
       return;
 	  }
   }
