@@ -11,9 +11,9 @@ The only hint I can provide is that, this plugin uses a data-driven approach whe
 
 Big Thoughts (MailSQL)
 ======================
-I plan to implement a client-side query system called MailSQL that utilizes SQL to express queries and use Javascript to execute them. MailSQL should be a highly specialized variant of SQL that only supports a very limited set of syntax and semantics, and it could be used as an analytic tool to conduct statictical information on somebody;s mailbox.
+I plan to implement a client-side query system called MailSQL that utilizes SQL to express queries and use Javascript to execute them. MailSQL should be a highly specialized variant of SQL that only supports a very limited set of syntax and semantics, and it could be used as an analytic tool to dig statictical data out of somebody's mailbox.
 
-MailSQL should only be implemented on the client side, in order to relief overheads off the server. It should have a memory based, non-transactional, query engine that performs basic SQL operation.
+MailSQL should only be implemented on the client side, in order to relief overheads off the server. It should have a memory based, non-transactional execution engine that performs basic SQL operation.
 
 MailSQL inputs data from the webpage of mail service by sending GET requests and parsing resulting HTML (this is easy with browser's built-in DOM parser). It always does a full-scan first, with some limits on the depth of scan, though, to avoid being noticed by the mail server administrator and being caught into trouble, and then perform all computation in-memory.
 
