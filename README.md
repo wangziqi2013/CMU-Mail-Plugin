@@ -1,7 +1,7 @@
 # CMU-Mail-Plugin
 This javascript plugin enhances functionalities and optimizes user experience for CMU mailbox. It requires a client side browser extension that is compatible with TemperMonkey or GreaseMonkey or any equivalence, in order to host and execute the script properly. However, it should not be difficult to migrate this to other front-end platforms or even integrate this into the webmail application.
 
-Some of the functionality enhancement are overlapped with what have already been provided by the webmail itself. This is due to the fact that this project started as a practice project in my free time, and I just added some features with not *any* investigation into the webmail system. Such features include row highlighting and filtering (this plugin provides a lightweight and thus more flexible for filtering, though, the concept itself is not very attractive to somebody who already configured a filter list on their familiar client).
+Some of the functionality enhancement are overlapped with what have already been provided by the webmail itself. This is due to the fact that this project started as a practice project in my free time, and I just added some features with not *any* investigation into the webmail system. Such features include row highlighting and filtering (this plugin provides a lightweight and thus more flexible form of filtering, though, the concept itself is not very attractive to somebody who already configured a filter list on their familiar client).
 
 Features
 ========
