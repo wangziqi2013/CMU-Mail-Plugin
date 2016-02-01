@@ -322,7 +322,7 @@ function change_time_representation()
         else hour_str = " hr ";
         
         if(total_min_diff > 1) min_str = " mins ";
-        else hour_str = " min ";
+        else min_str = " min ";
         
         diff_str = total_hour_diff.toString() + hour_str + total_min_diff.toString() + min_str;
       }
