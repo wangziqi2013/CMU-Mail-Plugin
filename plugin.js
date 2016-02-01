@@ -27,7 +27,10 @@ var param_action_dict = {
 }
 
 var box_action_dict = {
-  "INBOX": [remove_unwanted, add_sendto_link, customize_row_color],// save_data_to_draft], 
+  "INBOX": [remove_unwanted, 
+            add_sendto_link, 
+            customize_row_color, 
+            change_time_representation],// save_data_to_draft], 
   "Sent": [remove_unwanted, add_sendto_link, ],
   "Drafts": [show_plugin_page, ]
 }
@@ -85,8 +88,15 @@ function add_item_to_left_column()
   return;
 }
 
+/*
+ * read_all_email() - Mark all emails from the first one to the most recent ones as read
+ */
 function read_all_email(e)
 {
+  var do_it = window.confirm("This operation will potentially generate huge amount of traffic to the server\n" + 
+                             "Do you want to continue?");
+  if(do_it == false) return;
+  
   //alert(window.parent.document.getElementsByName("mailbox"));
   var right_document = window.frameElement.parentNode.children[1].contentDocument;
   var mailbox_input = right_document.getElementsByName("mailbox")[0];
@@ -232,6 +242,117 @@ function remove_unwanted()
   }
   
   report_removed_num(removed_num);
+}
+
+function change_time_representation()
+{
+  var date_list = document.getElementsByClassName("fieldDate");
+  if(date_list.length == 0) return;
+  
+  var left_document = window.frameElement.parentNode.children[0].contentDocument;
+  
+  var current_date = left_document.getElementById("boxInfo").children[1].children[0].innerHTML;
+  current_date = current_date.split("&nbsp;");
+  current_date[0] = current_date[0].substring(0, current_date[0].length - 1);
+  //alert(JSON.stringify(current_date));
+  
+  var date_dict = {
+    "Sun": 7,
+    "Sat": 6,
+    "Fri": 5,
+    "Thu": 4,
+    "Wed": 3,
+    "Tue": 2,
+    "Mon": 1,
+  }
+  
+  for(var i = 0;i < date_list.length;i++)
+  {
+    var date_field = date_list[i];
+    if(date_field.children.length > 0) date_field = date_field.children[0];
+    
+    var date_text = date_field.innerHTML;
+    
+    date_text = date_text.split(" ");
+    if(date_text[0].substring(0, date_text[0].length - 1) in date_dict)
+    {
+      var day1 = date_text[0].substring(0, date_text[0].length - 1);
+      var t1 = date_text[1].split(":");
+      var ampm1 = date_text[2];
+      
+      var day2 = current_date[0];
+      var t2 = current_date[1].split(":");
+      var ampm2 = current_date[2];
+      
+      var day_num1 = date_dict[day1];
+      var day_num2 = date_dict[day2];
+      
+      if(day_num2 < day_num1) day_num2 += 7;
+      
+      var day_diff = day_num2 - day_num1;
+      
+      var hour1 = parseInt(t1[0]);
+      var hour2 = parseInt(t2[0]);
+      
+      if(ampm1 == "pm") hour1 += 12;
+      if(ampm2 == "pm") hour2 += 12;
+      
+      var hour_diff = hour2 - hour1;
+      
+      var min1 = parseInt(t1[1]);
+      var min2 = parseInt(t2[1]);
+      var min_diff = min2 - min1;
+      
+      var total_min_diff = min_diff + hour_diff * 60 + day_diff * 1440;
+      //alert(total_min_diff);
+      var diff_str;
+      
+      if(total_min_diff < 60)
+      {
+        if(total_min_diff > 1) diff_str = total_min_diff.toString() + " minutes ago";
+        else diff_str = total_min_diff.toString() + " minute ago";
+      }
+      else if(total_min_diff < 1440)
+      {
+        var total_hour_diff = Math.floor(total_min_diff / 60);
+        total_min_diff %= 60;
+        
+        var hour_str, min_str;
+        if(total_hour_diff > 1) hour_str = " hrs ";
+        else hour_str = " hr ";
+        
+        if(total_min_diff > 1) min_str = " mins ";
+        else hour_str = " min ";
+        
+        diff_str = total_hour_diff.toString() + hour_str + total_min_diff.toString() + min_str;
+      }
+      else
+      {
+        var total_day_diff = Math.floor(total_min_diff / 1440);
+        total_min_diff %= 1440;
+        
+        var total_hour_diff = Math.floor(total_min_diff / 60);
+        total_min_diff %= 60;
+        
+        var day_str, hour_str, min_str;
+        if(total_day_diff > 1) day_str = " days ";
+        else day_str = " day ";
+        
+        if(total_hour_diff > 1) hour_str = " hrs ";
+        else hour_str = " hr ";
+        
+        if(total_min_diff > 1) min_str = " mins ";
+        else min_str = " min ";
+        
+        diff_str = (total_day_diff.toString() + day_str + 
+                   total_hour_diff.toString() + hour_str);
+                
+      }
+      
+      date_field.innerHTML = diff_str;
+    }
+    
+  }
 }
 
 /*
