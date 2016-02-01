@@ -39,11 +39,25 @@ var box_action_dict = {
 }
   
 var column_action_dict = {
-  "left_main": [add_item_to_left_column, add_read_all_to_left_column],
+  "left_main": [add_item_to_left_column, 
+                add_read_all_to_left_column],
   "right_main": [parse_cookie,  // Restore settings from cookie
                  determine_box, // Call callbacks for each mailbox
                 ], 
 }
+
+/*
+ * Defines items on the left column
+ */
+var left_column_item_list = [
+  {"icon": "../themes/cmu_theme/iconOptions.png",
+   "text": "Plugin Settings",
+   "param": "settings"},
+  {
+   "icon": "../themes/cmu_theme/infoTime.png",
+   "text": "About Author",
+   "param": "author"},
+]
 
 /*
  * cookie object
@@ -66,19 +80,22 @@ function add_item_to_left_column()
   var first_item = left_item_container.children[1];
   if(first_item == undefined) return;
   
-  var link_text;
-  
-  new_item = first_item.cloneNode(true);
-  left_item_container.appendChild(new_item);
-  // We use sent box image
-  new_item.children[0].setAttribute("src", "../themes/cmu_theme/iconOptions.png");
-  new_item.children[1].innerHTML = "Plugin Settings";
-  
-  link_text = new_item.children[1].getAttribute("href") + "&plugin=settings";
-  new_item.children[1].setAttribute("href", link_text);
-  
+  for(var i = 0;i < left_column_item_list.length;i++)
+  {
+    var item = left_column_item_list[i];
+    var link_text;
+
+    new_item = first_item.cloneNode(true);
+    left_item_container.appendChild(new_item);
+    // We use sent box image
+    new_item.children[0].setAttribute("src", item["icon"]);
+    new_item.children[1].innerHTML = item["text"];
+
+    link_text = new_item.children[1].getAttribute("href") + "&plugin=" + item["param"];
+    new_item.children[1].setAttribute("href", link_text);
+  }
   //// Next one
-  
+  /*
   new_item = first_item.cloneNode(true);
   left_item_container.appendChild(new_item);
   // We use sent box image
@@ -87,7 +104,7 @@ function add_item_to_left_column()
   
   link_text = new_item.children[1].getAttribute("href") + "&plugin=author";
   new_item.children[1].setAttribute("href", link_text);
-  
+  */
   return;
 }
 
