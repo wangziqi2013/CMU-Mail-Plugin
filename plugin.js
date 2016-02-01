@@ -30,8 +30,11 @@ var box_action_dict = {
   "INBOX": [remove_unwanted, 
             add_sendto_link, 
             customize_row_color, 
-            change_time_representation],// save_data_to_draft], 
-  "Sent": [remove_unwanted, add_sendto_link, ],
+            change_time_representation,
+            add_reply_and_forward_icon, ],// save_data_to_draft], 
+  "Sent": [remove_unwanted, 
+           add_sendto_link, 
+           change_time_representation, ],
   "Drafts": [show_plugin_page, ]
 }
   
@@ -244,6 +247,57 @@ function remove_unwanted()
   report_removed_num(removed_num);
 }
 
+/*
+ * add_reply_and_forward_icon() - Adds a forward and reply icon for each row
+ */
+function add_reply_and_forward_icon()
+{
+  var row_list = document.getElementsByClassName("fieldFlags");
+  //alert(row_list.length);
+  if(row_list.length == 0) return;
+  
+  for(var i = 0;i < row_list.length;i++)
+  {
+    var row_div = row_list[i].children[0];
+    if(row_div == undefined) return;
+    
+    var row_id = row_div.parentNode.parentNode.children[0].children[0].getAttribute("value");
+    //alert(row_id);
+    
+    // We insert before these two
+    var first_img = row_div.children[0];
+    
+    var reply_img = document.createElement("img");
+    reply_img.setAttribute("src", "../themes/cmu_theme/messagePaginateBack.png");
+    reply_img.setAttribute("title", "Reply All");
+    
+    var reply_link = document.createElement("a");
+    reply_link.setAttribute("href", "https://webmail.andrew.cmu.edu/src/compose.php?passed_id=" +
+                            row_id +
+                            "&mailbox=INBOX&smaction=reply_all");
+    reply_link.appendChild(reply_img);
+    
+    var fwd_img = document.createElement("img");
+    fwd_img.setAttribute("src", "../themes/cmu_theme/messagePaginateForward.png");
+    fwd_img.setAttribute("title", "Forward");
+    
+    var fwd_link = document.createElement("a");
+    fwd_link.setAttribute("href", "https://webmail.andrew.cmu.edu/src/compose.php?passed_id=" +
+                            row_id +
+                            "&mailbox=INBOX&smaction=forward");
+    fwd_link.appendChild(fwd_img);
+    
+    row_div.insertBefore(reply_link, first_img);
+    row_div.insertBefore(fwd_link, first_img);
+  }
+  
+  return;
+}
+
+/*
+ * change_time_representation() - Changes from absolute time to relative
+ * time representation
+ */
 function change_time_representation()
 {
   var date_list = document.getElementsByClassName("fieldDate");
@@ -274,6 +328,17 @@ function change_time_representation()
     var date_text = date_field.innerHTML;
     
     date_text = date_text.split(" ");
+    
+    //alert(date_text[0], date_text[0].indexOf(":"));
+    // If there is no week, then just use the currenr week
+    // and we have not removed the ":" yet
+    if(date_text[0].indexOf(":") != -1)
+    {
+      date_text = [current_date[0] + ":", date_text[0], date_text[1]];
+      //alert(current_date[0]);
+    }
+    //return;
+    // If it is week-time-am/pm notation then we do conversion
     if(date_text[0].substring(0, date_text[0].length - 1) in date_dict)
     {
       var day1 = date_text[0].substring(0, date_text[0].length - 1);
@@ -294,8 +359,11 @@ function change_time_representation()
       var hour1 = parseInt(t1[0]);
       var hour2 = parseInt(t2[0]);
       
-      if(ampm1 == "pm") hour1 += 12;
-      if(ampm2 == "pm") hour2 += 12;
+      if(ampm1 == "pm" && hour1 != 12) hour1 += 12;
+      //else if(hour1 == 12) hour1 = 0;
+      
+      if(ampm2 == "pm" && hour2 != 12) hour2 += 12;
+      //else if(hour2 == 12) hour2 = 0;
       
       var hour_diff = hour2 - hour1;
       
@@ -304,10 +372,16 @@ function change_time_representation()
       var min_diff = min2 - min1;
       
       var total_min_diff = min_diff + hour_diff * 60 + day_diff * 1440;
+      if(total_min_diff < 0) total_min_diff += (60 * 12);
+      
       //alert(total_min_diff);
       var diff_str;
       
-      if(total_min_diff < 60)
+      if(total_min_diff == 0)
+      {
+        diff_str = "Just Now";
+      }
+      else if(total_min_diff < 60)
       {
         if(total_min_diff > 1) diff_str = total_min_diff.toString() + " minutes ago";
         else diff_str = total_min_diff.toString() + " minute ago";
