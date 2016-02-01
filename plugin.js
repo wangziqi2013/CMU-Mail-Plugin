@@ -143,6 +143,9 @@ function read_all_email(e)
   return;
 }
 
+/*
+ * add_read_all_to_left_column() - Add a "read all" button to left frame
+ */
 function add_read_all_to_left_column()
 {
   var left_column = document.getElementById("boxFolders");
@@ -160,6 +163,7 @@ function add_read_all_to_left_column()
   read_all_link.style.width = "20px";
   read_all_link.setAttribute("href", "javascript:void(0)");
   read_all_link.addEventListener("click", read_all_email);
+  read_all_link.setAttribute("title", "Read All and Refresh");
   
   inbox_row.insertBefore(read_all_link, inbox_row.children[1]);
   
@@ -644,13 +648,35 @@ function save_data_to_draft()
   return;
 }
 
-/*
- * plugin_show_settings() - Draw setting page
- */
-function plugin_show_settings()
+function plugin_show_sender_filter_list(page)
 {
-  var page = document.getElementsByClassName("pageContents")[0];
+  page.appendChild(create_node_with_text("h2", "Sender Filter List"));
+  var unwanted_exact_list = plugin_data_dict["unwanted_exact_list"];
+  for(var i = 0;i < unwanted_exact_list.length;i++)
+  {
+    //alert(i);
+    var line_div = document.createElement("div");
+    var line_input = document.createElement("input");
+    line_input.setAttribute("type", "text");
+    line_input.setAttribute("id", "unwanted_exact_list_" + i.toString());
+    line_input.setAttribute("value", unwanted_exact_list[i]);
+    line_div.appendChild(line_input);
+    
+    var line_button_save = create_node_with_text("button", "Save");
+    line_button_save.setAttribute("name", "unwanted_exact_list_" + i.toString());
+    var line_button_remove = create_node_with_text("button", "Remove");
+    line_button_remove.setAttribute("name", "unwanted_exact_list_" + i.toString());
+    
+    line_div.appendChild(line_button_save);
+    line_div.appendChild(line_button_remove);
+    page.appendChild(line_div);
+  }
   
+  return;
+}
+
+function plugin_show_enable_filter(page)
+{
   page.appendChild(create_node_with_text("h2", "Enable Filter"));
   
   var filter_div = document.createElement("div");
@@ -681,32 +707,45 @@ function plugin_show_settings()
   
   page.appendChild(filter_div);
   
-  //////////////////////////////////
-  
-  page.appendChild(create_node_with_text("h2", "Sender Filter List"));
-  var unwanted_exact_list = plugin_data_dict["unwanted_exact_list"];
-  for(var i = 0;i < unwanted_exact_list.length;i++)
+  return;
+}
+
+function plugin_show_sender_coloring(page)
+{
+  page.appendChild(create_node_with_text("h2", "Message Coloring"));
+  var title_color_dict = plugin_data_dict["title_color_dict"];
+  for(var i in title_color_dict)
   {
-    //alert(i);
     var line_div = document.createElement("div");
-    var line_input = document.createElement("input");
-    line_input.setAttribute("type", "text");
-    line_input.setAttribute("id", "unwanted_exact_list_" + i.toString());
-    line_input.setAttribute("value", unwanted_exact_list[i]);
-    line_div.appendChild(line_input);
+
+    var line_input1 = document.createElement("input");
+    line_input1.setAttribute("type", "text");
+    line_input1.setAttribute("id", "title_color_dict_key_" + i.toString());
+    line_input1.setAttribute("value", i);
+    line_div.appendChild(line_input1);
+    
+    var line_input2 = document.createElement("input");
+    line_input2.setAttribute("type", "text");
+    line_input2.setAttribute("id", "title_color_dict_value_" + i.toString());
+    line_input2.setAttribute("value", title_color_dict[i]);
+    line_div.appendChild(line_input2);
     
     var line_button_save = create_node_with_text("button", "Save");
-    line_button_save.setAttribute("name", "unwanted_exact_list_" + i.toString());
+    line_button_save.setAttribute("name", "title_color_dict_save_" + i.toString());
     var line_button_remove = create_node_with_text("button", "Remove");
-    line_button_remove.setAttribute("name", "unwanted_exact_list_" + i.toString());
+    line_button_remove.setAttribute("name", "title_color_dict_remove_" + i.toString());
     
     line_div.appendChild(line_button_save);
     line_div.appendChild(line_button_remove);
+    
     page.appendChild(line_div);
   }
-  
-  //////////////////////////////////
-  
+
+  return;
+}
+
+function plugin_show_submit_button(page)
+{
   var submit_div = document.createElement("div");
   var submit_button = document.createElement("button");
   var submit_button_text = document.createTextNode("Save All");
@@ -716,7 +755,21 @@ function plugin_show_settings()
   
   page.appendChild(submit_div);
   
-  //////////////////////////////////
+  return;
+}
+
+/*
+ * plugin_show_settings() - Draw setting page
+ */
+function plugin_show_settings()
+{
+  var page = document.getElementsByClassName("pageContents")[0];
+  page.style.overflow = "scroll";
+  
+  plugin_show_enable_filter(page);
+  plugin_show_sender_filter_list(page);
+  plugin_show_sender_coloring(page);
+  plugin_show_submit_button(page);
   
   return;
 }
