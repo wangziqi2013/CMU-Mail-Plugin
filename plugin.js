@@ -104,11 +104,12 @@ function register_new_email_notification()
     return;
   }
   
-  // The user has deleted email?
+  // The user has deleted email
+  // In that case we should also count the maximum
   if(plugin_settings_dict["plugin_settings_dict"] > first_num)
   {
-    plugin_settings_dict["plugin_settings_dict"] = first_num;
-    assemble_cookie();
+    //plugin_settings_dict["plugin_settings_dict"] = first_num;
+    //assemble_cookie();
     return;
   }
   
