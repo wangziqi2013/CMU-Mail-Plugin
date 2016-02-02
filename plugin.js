@@ -31,7 +31,9 @@ var box_action_dict = {
             add_sendto_link, 
             customize_row_color, 
             change_time_representation,
-            add_reply_and_forward_icon, ],// save_data_to_draft], 
+            add_reply_and_forward_icon, 
+            register_new_email_notification],// save_data_to_draft], 
+  
   "Sent": [remove_unwanted, 
            add_sendto_link, 
            change_time_representation, ],
@@ -66,7 +68,63 @@ var left_column_item_list = [
  */
 var plugin_settings_dict = {
   "filter_on": false,
+  "last_seen_message": undefined,
 };
+
+/*
+ * Message counter - Used for checking new message in a session
+ */
+var last_seen_message_global = undefined;
+
+/*
+ * register_new_email_notification() - Register notification for new emails
+ */
+function register_new_email_notification()
+{
+  if(!("Notification" in window)) return;
+  
+  // NOTE: This need change!! We should not request permission every time
+  // we want to send a message
+  // Probably put this into settings dict
+  if (Notification.permission == 'denied') 
+  {
+    Notification.requestPermission();
+  }
+  
+  var field_list = document.getElementsByClassName("fieldCheckbox");
+  if(field_list.length == 0) return;
+  
+  var first_msg = field_list[0].children[0];
+  var first_num = parseInt(first_msg.getAttribute("value"));
+  
+  if(plugin_settings_dict["plugin_settings_dict"] == undefined)
+  {
+    plugin_settings_dict["plugin_settings_dict"] = first_num;
+    assemble_cookie();
+    return;
+  }
+  
+  // The user has deleted email?
+  if(plugin_settings_dict["plugin_settings_dict"] > first_num)
+  {
+    plugin_settings_dict["plugin_settings_dict"] = first_num;
+    assemble_cookie();
+    return;
+  }
+  
+  if(plugin_settings_dict["plugin_settings_dict"] == first_num) return;
+  
+  var num_email = first_num - plugin_settings_dict["plugin_settings_dict"];
+  var options = {"body": "You have " + num_email.toString() + " new emails",
+                 "icon": "../themes/cmu_theme/msgNew.png"};
+  var notification = new Notification("New Email", options);
+  
+  // Still need to save the newest
+  plugin_settings_dict["plugin_settings_dict"] = first_num;
+  assemble_cookie();
+  
+  return;
+}
 
 /*
  * add_item_to_left_column() - Add new items to left column
@@ -987,7 +1045,6 @@ function plugin_show_settings()
 }
 
 dispatch_column();
-
 
 /*
 Exception: SyntaxError: missing : after property id
