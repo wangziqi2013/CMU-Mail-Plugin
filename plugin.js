@@ -24,6 +24,7 @@ var plugin_data_dict = {
 var param_action_dict = {
   "author": [plugin_clear_right_page, plugin_show_author, ],
   "settings": [plugin_clear_right_page, plugin_show_settings, ], 
+  "ta_reservation": [plugin_clear_right_page, plugin_show_ta_reservation, ], 
 }
 
 var box_action_dict = {
@@ -32,7 +33,8 @@ var box_action_dict = {
             customize_row_color, 
             change_time_representation,
             add_reply_and_forward_icon, 
-            register_new_email_notification],// save_data_to_draft], 
+            register_new_email_notification,
+            register_right_window_auto_refresh],// save_data_to_draft], 
   
   "Sent": [remove_unwanted, 
            add_sendto_link, 
@@ -59,6 +61,10 @@ var left_column_item_list = [
    "icon": "../themes/cmu_theme/infoTime.png",
    "text": "About Author",
    "param": "author"},
+  {
+   "icon": "../themes/cmu_theme/iconCompose.png",
+   "text": "TA Reservation",
+   "param": "ta_reservation"}, 
 ]
 
 /*
@@ -69,12 +75,31 @@ var left_column_item_list = [
 var plugin_settings_dict = {
   "filter_on": false,
   "last_seen_message": undefined,
+  "auto_refresh_interval": 120000,
 };
 
 /*
  * Message counter - Used for checking new message in a session
  */
 var last_seen_message_global = undefined;
+
+/*
+ * register_right_window_auto_refresh() - Register for automatic refresh
+ * on the right frame
+ */
+function register_right_window_auto_refresh()
+{
+  window.setTimeout(function()
+                    {
+                      //alert(plugin_settings_dict.auto_refresh_interval);
+                      // Force refresh not using cache
+                      location.reload(true);
+                      return;
+                    }, plugin_settings_dict["auto_refresh_interval"]);
+  
+  //alert(plugin_settings_dict["auto_refresh_interval"]);
+  return;
+}
 
 /*
  * register_new_email_notification() - Register notification for new emails
@@ -90,6 +115,8 @@ function register_new_email_notification()
   {
     Notification.requestPermission();
   }
+  
+  Notification.requestPermission();
   
   var field_list = document.getElementsByClassName("fieldCheckbox");
   if(field_list.length == 0) return;
@@ -436,19 +463,35 @@ function change_time_representation()
       var hour2 = parseInt(t2[0]);
       
       if(ampm1 == "pm" && hour1 != 12) hour1 += 12;
+      else if(ampm1 == "am" && hour1 == 12) hour1 = 0;
       //else if(hour1 == 12) hour1 = 0;
       
       if(ampm2 == "pm" && hour2 != 12) hour2 += 12;
-      //else if(hour2 == 12) hour2 = 0;
+      else if(ampm2 == "am" && hour2 == 12) hour2 = 0;
       
       var hour_diff = hour2 - hour1;
+      if(hour_diff < 0) 
+      {
+        hour_diff = (hour2 + 24 - hour1);
+        day_diff -= 1;
+      }
       
       var min1 = parseInt(t1[1]);
       var min2 = parseInt(t2[1]);
       var min_diff = min2 - min1;
       
+      if(min_diff < 0) 
+      {
+        min_diff = (min2 + 60 - min1);
+        hour_diff -= 1; 
+      }
+      
+      //alert(min_diff);
+      //alert(hour_diff);
+      //alert(day_diff);
+      //return;
       var total_min_diff = min_diff + hour_diff * 60 + day_diff * 1440;
-      if(total_min_diff < 0) total_min_diff += (60 * 12);
+      //if(total_min_diff < 0) total_min_diff += (60 * 12);
       
       //alert(total_min_diff);
       var diff_str;
@@ -1045,13 +1088,16 @@ function plugin_show_settings()
   return;
 }
 
+function plugin_show_ta_reservation()
+{
+  var page = document.getElementsByClassName("pageContents")[0];
+  page.style.overflow = "scroll";
+  
+  page.appendChild(create_node_with_text("h1", "Teaching Assistant Reservations"));
+  
+  return;
+}
+
+//assemble_cookie();
 dispatch_column();
 
-/*
-Exception: SyntaxError: missing : after property id
-@Scratchpad/9:16
-*/
-/*
-Exception: SyntaxError: missing ] after element list
-@Scratchpad/9:17
-*/
