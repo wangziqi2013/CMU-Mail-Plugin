@@ -500,6 +500,10 @@ function change_time_representation()
       {
         diff_str = "Just Now";
       }
+      if(total_min_diff < 0)
+      {
+        diff_str = "Just Now?";
+      }
       else if(total_min_diff < 60)
       {
         if(total_min_diff > 1) diff_str = total_min_diff.toString() + " minutes ago";
